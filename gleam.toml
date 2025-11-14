@@ -7,7 +7,7 @@ description = "Gleam bindings for Erlang's built-in DNS resolution modules."
 
 target = "erlang"
 
-repository = { type = "github", user = "ckreiling", repo = "nessie" }
+repository = { type = "github", user = "violetbuse", repo = "nessie_2" }
 
 links = []
 

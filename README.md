@@ -1,16 +1,16 @@
-# nessie
+# nessie_2
 
-[![Package Version](https://img.shields.io/hexpm/v/nessie)](https://hex.pm/packages/nessie)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/nessie/)
+[![Package Version](https://img.shields.io/hexpm/v/nessie_2)](https://hex.pm/packages/nessie_2))
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/nessie_2/)
 
-A friendly DNS client for Gleam programs targeting Erlang.
+A fork of [ckreiling/nessie](https://github.com/ckreiling/nessie), a basic dns client for gleam on the erlang target.
 
 ```sh
-gleam add nessie
+gleam add nessie_2
 ```
 
 ```gleam
-import nessie
+import nessie_2
 import gleam/io
 
 pub fn main() {
@@ -19,7 +19,7 @@ pub fn main() {
 }
 ```
 
-Further documentation can be found at <https://hexdocs.pm/nessie>.
+Further documentation can be found at <https://hexdocs.pm/nessie_2>.
 
 ## Supported DNS Records
 

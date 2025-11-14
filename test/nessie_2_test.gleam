@@ -109,11 +109,10 @@ pub fn lookup_mx_test() {
 }
 
 pub fn lookup_soa_test() {
-  let addr_list = nessie_2.lookup_soa("ckreiling.dev", nessie_2.In, [])
+  let addr_list = nessie_2.lookup_soa("viowet.com", nessie_2.In, [])
 
-  let assert [
-    nessie_2.SOARecord(_, "cloud-dns-hostmaster.google.com", _, _, _, _, _),
-  ] = addr_list
+  let assert [nessie_2.SOARecord(_, "dns.cloudflare.com", _, _, _, _, _)] =
+    addr_list
 }
 
 pub fn lookup_ns_test() {
@@ -190,9 +189,8 @@ pub fn getbyname_mx_test() {
 
 pub fn getbyname_soa_test() {
   let assert Ok(hostent) =
-    nessie_2.getbyname_soa("ckreiling.dev", nessie_2.Timeout(1000))
+    nessie_2.getbyname_soa("viowet.com", nessie_2.Timeout(1000))
 
-  let assert [
-    nessie_2.SOARecord(_, "cloud-dns-hostmaster.google.com", _, _, _, _, _),
-  ] = hostent.addr_list
+  let assert [nessie_2.SOARecord(_, "dns.cloudflare.com", _, _, _, _, _)] =
+    hostent.addr_list
 }
