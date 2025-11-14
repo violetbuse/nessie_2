@@ -1,6 +1,6 @@
 # nessie_2
 
-[![Package Version](https://img.shields.io/hexpm/v/nessie_2)](https://hex.pm/packages/nessie_2))
+[![Package Version](https://img.shields.io/hexpm/v/nessie_2)](https://hex.pm/packages/nessie_2)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/nessie_2/)
 
 A fork of [ckreiling/nessie](https://github.com/ckreiling/nessie), a basic dns client for gleam on the erlang target.
@@ -14,7 +14,7 @@ import nessie_2
 import gleam/io
 
 pub fn main() {
-  let ipv4_addrs = nessie.lookup_ipv4("gleam.run", nessie.In, [])
+  let ipv4_addrs = nessie_2.lookup_ipv4("gleam.run", nessie_2.In, [])
   io.debug(ipv4_addrs)
 }
 ```
