@@ -50,7 +50,10 @@ pub fn ipv6_string_to_address_succeeds_test() {
 
 const nessie_a_record_ips = [#(1, 1, 1, 1), #(1, 0, 0, 1)]
 
-const nessie_aaaa_record_ips = [#(0, 0, 0, 0, 0, 65_535, 0, 0)]
+const nessie_aaaa_record_ips = [
+  #(0, 0, 0, 0, 0, 65_535, 0, 0),
+  #(64_938, 0, 14_718, 2683, 1453, 5737, 57_076, 2),
+]
 
 const viowet_ns_records = [
   "harleigh.ns.cloudflare.com",
