@@ -4,12 +4,13 @@
 //// `inet_res` and `inet` modules. Most of the functions and types are simply
 //// Gleam representations of their Erlang counterparts.
 
-import gleam/list
-import gleam/function
-import gleam/result
-import gleam/dynamic.{type Decoder, type Dynamic}
+import gleam/dynamic.{type Dynamic}
+import gleam/dynamic/decode.{type Decoder}
 import gleam/erlang/atom.{type Atom}
 import gleam/erlang/charlist.{type Charlist}
+import gleam/function
+import gleam/list
+import gleam/result
 
 /// Nameserver address and port.
 pub type Nameserver =
@@ -125,13 +126,15 @@ pub fn string_to_ip(ip_addr: String) -> Result(IPAddress, String) {
   |> parse_address()
   |> result.map_error(atom.to_string)
   |> result.map(fn(dyn) {
-    dyn
-    |> dynamic.tuple4(dynamic.int, dynamic.int, dynamic.int, dynamic.int)
-    |> result.map(IPV4)
-    |> result.or(
-      dyn
-      |> ip_decoder(),
-    )
+    // dyn
+    // |> dynamic.tuple4(dynamic.int, dynamic.int, dynamic.int, dynamic.int)
+    // |> result.map(IPV4)
+    // |> result.or(
+    //   dyn
+    //   |> ip_decoder(),
+    // )
+    // |> result.replace_error("decode_error")
+    decode.run(dyn, ip_decoder())
     |> result.replace_error("decode_error")
   })
   |> result.flatten()
@@ -139,26 +142,29 @@ pub fn string_to_ip(ip_addr: String) -> Result(IPAddress, String) {
 
 /// Returns a `gleam/dynamic.Decoder` for decoding an IP address tuple.
 pub fn ip_decoder() -> Decoder(IPAddress) {
-  fn(value) {
-    value
-    |> dynamic.tuple4(dynamic.int, dynamic.int, dynamic.int, dynamic.int)
-    |> result.map(IPV4)
-    |> result.lazy_or(fn() {
-      value
-      |> dynamic.decode8(
-        fn(i1, i2, i3, i4, i5, i6, i7, i8) { #(i1, i2, i3, i4, i5, i6, i7, i8) },
-        dynamic.element(0, dynamic.int),
-        dynamic.element(1, dynamic.int),
-        dynamic.element(2, dynamic.int),
-        dynamic.element(3, dynamic.int),
-        dynamic.element(4, dynamic.int),
-        dynamic.element(5, dynamic.int),
-        dynamic.element(6, dynamic.int),
-        dynamic.element(7, dynamic.int),
-      )
-      |> result.map(IPV6)
-    })
+  let ipv4_decoder = {
+    use i1 <- decode.field(0, decode.int)
+    use i2 <- decode.field(1, decode.int)
+    use i3 <- decode.field(2, decode.int)
+    use i4 <- decode.field(3, decode.int)
+
+    decode.success(IPV4(#(i1, i2, i3, i4)))
   }
+
+  let ipv6_decoder = {
+    use i1 <- decode.field(0, decode.int)
+    use i2 <- decode.field(1, decode.int)
+    use i3 <- decode.field(2, decode.int)
+    use i4 <- decode.field(3, decode.int)
+    use i5 <- decode.field(4, decode.int)
+    use i6 <- decode.field(5, decode.int)
+    use i7 <- decode.field(6, decode.int)
+    use i8 <- decode.field(7, decode.int)
+
+    decode.success(IPV6(#(i1, i2, i3, i4, i5, i6, i7, i8)))
+  }
+
+  decode.one_of(ipv6_decoder, [ipv4_decoder])
 }
 
 /// Looks up a record of the specified type for the given name.
@@ -287,30 +293,44 @@ pub fn gethostbyaddr(
 
 fn to_erl_resolver_option(option: ResolverOption) -> ErlOptionTuple {
   let #(opt_name, opt_value) = case option {
-    INet6(inet6) -> #("inet6", dynamic.from(inet6))
-    Recurse(recurse) -> #("recurse", dynamic.from(recurse))
-    Retry(retry) -> #("retry", dynamic.from(retry))
-    TimeoutMillis(timeout) -> #("timeout", dynamic.from(timeout))
+    INet6(inet6) -> #("inet6", dynamic.bool(inet6))
+    Recurse(recurse) -> #("recurse", dynamic.bool(recurse))
+    Retry(retry) -> #("retry", dynamic.int(retry))
+    TimeoutMillis(timeout) -> #("timeout", dynamic.int(timeout))
     NxdomainReply(nxdomain_reply) -> #(
       "nxdomain_reply",
-      dynamic.from(nxdomain_reply),
+      dynamic.bool(nxdomain_reply),
     )
     Nameservers(nameservers) -> {
       let erl_nameservers =
         list.map(nameservers, fn(ip_port) {
           let #(ip, port) = ip_port
-          let ip = case ip {
-            IPV4(ip) -> dynamic.from(ip)
-            IPV6(ip) -> dynamic.from(ip)
+          let ip = {
+            let ints = case ip {
+              IPV4(#(n1, n2, n3, n4)) -> [n1, n2, n3, n4]
+              IPV6(#(n1, n2, n3, n4, n5, n6, n7, n8)) -> [
+                n1,
+                n2,
+                n3,
+                n4,
+                n5,
+                n6,
+                n7,
+                n8,
+              ]
+            }
+
+            list.map(ints, dynamic.int) |> dynamic.list
           }
 
-          #(ip, port)
+          // #(ip, port)
+          dynamic.array([ip, dynamic.int(port)])
         })
-      #("nameservers", dynamic.from(erl_nameservers))
+      #("nameservers", dynamic.list(erl_nameservers))
     }
   }
 
-  #(atom.create_from_string(opt_name), opt_value)
+  #(atom.create(opt_name), opt_value)
 }
 
 type ErlOptionTuple =
@@ -360,8 +380,9 @@ fn to_hostent(
 fn from_dns_name(dyn: Dynamic) -> String {
   let atom_from_dynamic = fn() {
     dyn
-    |> atom.from_dynamic()
-    |> result.map(atom.to_string)
+    |> atom.cast_from_dynamic()
+    |> atom.to_string
+    |> Ok
   }
 
   dyn
@@ -390,7 +411,9 @@ fn to_soa(erl_soa: ErlSoa) -> SOARecord {
 }
 
 @external(erlang, "nessie_inet_res_ffi", "charlist_from_dynamic")
-fn charlist_from_dynamic(d: Dynamic) -> Result(Charlist, dynamic.DecodeErrors)
+fn charlist_from_dynamic(
+  d: Dynamic,
+) -> Result(Charlist, List(decode.DecodeError))
 
 @external(erlang, "nessie_inet_res_ffi", "getbyname")
 fn do_getbyname_string(
