@@ -48,23 +48,17 @@ pub fn ipv6_string_to_address_succeeds_test() {
   should.equal(r, Ok(nessie_2.IPV6(#(100, 200, 300, 0, 500, 600, 700, 800))))
 }
 
-const nessie_a_record_ips = [#(192, 168, 0, 0), #(192, 168, 0, 1)]
+const nessie_a_record_ips = [#(1, 1, 1, 1), #(1, 0, 0, 1)]
 
-const nessie_aaaa_record_ips = [
-  #(18_368, 54_663, 59_813, 54_949, 42_880, 55_456, 53_294, 11_238),
-  #(39_681, 18_472, 45_578, 35_827, 32_726, 8062, 7641, 42_895),
-]
+const nessie_aaaa_record_ips = [#(0, 0, 0, 0, 0, 65_535, 0, 0)]
 
-const ckreiling_dev_ns_records = [
-  "ns-cloud-d3.googledomains.com", "ns-cloud-d2.googledomains.com",
-  "ns-cloud-d4.googledomains.com", "ns-cloud-d1.googledomains.com",
+const viowet_ns_records = [
+  "harleigh.ns.cloudflare.com",
+  "owen.ns.cloudflare.com",
 ]
 
 pub fn lookup_ipv4_test() {
-  let addrs =
-    nessie_2.lookup_ipv4("nessie.ckreiling.dev", nessie_2.In, [
-      nessie_2.Nameservers([#(nessie_2.IPV4(#(1, 1, 1, 1)), 53)]),
-    ])
+  let addrs = nessie_2.lookup_ipv4("nessie_2.test.viowet.com", nessie_2.In, [])
 
   let expected_addrs = set.from_list(nessie_a_record_ips)
   let addrs = set.from_list(addrs)
@@ -74,7 +68,7 @@ pub fn lookup_ipv4_test() {
 
 pub fn lookup_ipv6_test() {
   let addrs =
-    nessie_2.lookup_ipv6("nessie.ckreiling.dev", nessie_2.In, [
+    nessie_2.lookup_ipv6("nessie_2.test.viowet.com", nessie_2.In, [
       nessie_2.Retry(2),
     ])
 
@@ -86,24 +80,32 @@ pub fn lookup_ipv6_test() {
 
 pub fn lookup_cname_test() {
   let addr_list =
-    nessie_2.lookup("cname.nessie.ckreiling.dev", nessie_2.In, nessie_2.CNAME, [
-      nessie_2.Recurse(True),
-    ])
+    nessie_2.lookup(
+      "cname.nessie_2.test.viowet.com",
+      nessie_2.In,
+      nessie_2.Cname,
+      [
+        nessie_2.Recurse(True),
+      ],
+    )
 
-  should.equal(addr_list, ["nessie.ckreiling.dev"])
+  should.equal(addr_list, ["nessie_2.test.viowet.com"])
 }
 
 pub fn lookup_txt_test() {
   let addr_list =
-    nessie_2.lookup("nessie.ckreiling.dev", nessie_2.In, nessie_2.TXT, [])
+    nessie_2.lookup("nessie_2.test.viowet.com", nessie_2.In, nessie_2.Txt, [])
 
-  should.equal(addr_list, ["Hello, Nessie Test!"])
+  should.equal(addr_list, ["test succeeded"])
 }
 
 pub fn lookup_mx_test() {
-  let addr_list = nessie_2.lookup_mx("nessie.ckreiling.dev", nessie_2.In, [])
+  let addr_list =
+    nessie_2.lookup_mx("nessie_2.test.viowet.com", nessie_2.In, [])
 
-  should.equal(addr_list, [nessie_2.MXRecord(10, "test.nessie.ckreiling.dev")])
+  should.equal(addr_list, [
+    nessie_2.MXRecord(10, "mailtest.nessie_2.test.viowet.com"),
+  ])
 }
 
 pub fn lookup_soa_test() {
@@ -116,11 +118,11 @@ pub fn lookup_soa_test() {
 
 pub fn lookup_ns_test() {
   let addr_list =
-    nessie_2.lookup("ckreiling.dev", nessie_2.In, nessie_2.NS, [
+    nessie_2.lookup("viowet.com", nessie_2.In, nessie_2.Ns, [
       nessie_2.TimeoutMillis(1000),
     ])
 
-  let expected_servers = set.from_list(ckreiling_dev_ns_records)
+  let expected_servers = set.from_list(viowet_ns_records)
   let servers = set.from_list(addr_list)
 
   should.equal(expected_servers, servers)
@@ -128,9 +130,9 @@ pub fn lookup_ns_test() {
 
 pub fn getbyname_ns_test() {
   let assert Ok(hostent) =
-    nessie_2.getbyname("ckreiling.dev", nessie_2.NS, nessie_2.Timeout(1000))
+    nessie_2.getbyname("viowet.com", nessie_2.Ns, nessie_2.Timeout(1000))
 
-  let expected_servers = set.from_list(ckreiling_dev_ns_records)
+  let expected_servers = set.from_list(viowet_ns_records)
   let servers = set.from_list(hostent.addr_list)
 
   should.equal(expected_servers, servers)
@@ -139,28 +141,28 @@ pub fn getbyname_ns_test() {
 pub fn getbyname_cname_test() {
   let assert Ok(hostent) =
     nessie_2.getbyname(
-      "cname.nessie.ckreiling.dev",
-      nessie_2.CNAME,
+      "cname.nessie_2.test.viowet.com",
+      nessie_2.Cname,
       nessie_2.Timeout(1000),
     )
 
-  should.equal(hostent.addr_list, ["nessie.ckreiling.dev"])
+  should.equal(hostent.addr_list, ["nessie_2.test.viowet.com"])
 }
 
 pub fn getbyname_txt_test() {
   let assert Ok(hostent) =
     nessie_2.getbyname(
-      "nessie.ckreiling.dev",
-      nessie_2.TXT,
+      "nessie_2.test.viowet.com",
+      nessie_2.Txt,
       nessie_2.Timeout(1000),
     )
 
-  should.equal(hostent.addr_list, ["Hello, Nessie Test!"])
+  should.equal(hostent.addr_list, ["test succeeded"])
 }
 
 pub fn getbyname_ipv4_test() {
   let assert Ok(hostent) =
-    nessie_2.getbyname_ipv4("nessie.ckreiling.dev", nessie_2.Timeout(1000))
+    nessie_2.getbyname_ipv4("nessie_2.test.viowet.com", nessie_2.Timeout(1000))
 
   let expected_addrs = set.from_list(nessie_a_record_ips)
   let addrs = set.from_list(hostent.addr_list)
@@ -170,7 +172,7 @@ pub fn getbyname_ipv4_test() {
 
 pub fn getbyname_ipv6_test() {
   let assert Ok(hostent) =
-    nessie_2.getbyname_ipv6("nessie.ckreiling.dev", nessie_2.Timeout(1000))
+    nessie_2.getbyname_ipv6("nessie_2.test.viowet.com", nessie_2.Timeout(1000))
 
   let expected_addrs = set.from_list(nessie_aaaa_record_ips)
   let addrs = set.from_list(hostent.addr_list)
@@ -180,9 +182,9 @@ pub fn getbyname_ipv6_test() {
 
 pub fn getbyname_mx_test() {
   let assert Ok(hostent) =
-    nessie_2.getbyname_mx("nessie.ckreiling.dev", nessie_2.Timeout(1000))
+    nessie_2.getbyname_mx("nessie_2.test.viowet.com", nessie_2.Timeout(1000))
   should.equal(hostent.addr_list, [
-    nessie_2.MXRecord(10, "test.nessie.ckreiling.dev"),
+    nessie_2.MXRecord(10, "mailtest.nessie_2.test.viowet.com"),
   ])
 }
 

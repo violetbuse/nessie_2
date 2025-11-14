@@ -101,9 +101,9 @@ pub type IPAddress {
 
 /// DNS record types returning plain string data.
 pub type StringRecordType {
-  CNAME
-  TXT
-  NS
+  Cname
+  Txt
+  Ns
 }
 
 /// Converts an IP address to a string.
@@ -230,8 +230,7 @@ pub fn getbyname(
   srt: StringRecordType,
   timeout: Timeout,
 ) -> Result(Hostent(String), ErrorReason) {
-  name
-  |> do_getbyname_string(srt, timeout)
+  do_getbyname_string(name, srt, timeout)
   |> result.map(to_hostent(_, charlist.to_string))
   |> result.map_error(to_dns_err)
 }

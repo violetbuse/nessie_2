@@ -19,7 +19,8 @@ getbyname(Name, Type, Timeout) ->
         end,
 
     BinaryName = binary:bin_to_list(Name),
-    inet_res:getbyname(BinaryName, convert_to_atom(Type), T).
+    TypeAtom = convert_to_atom(Type),
+    inet_res:getbyname(BinaryName, TypeAtom, T).
 
 gethostbyaddr(Address, Timeout) ->
     T = case Timeout of
@@ -40,7 +41,8 @@ lookup_ipv6(Name, Class, Opts) -> lookup(Name, Class, aaaa, Opts).
 
 lookup(Name, Class, Type, Opts) ->
     CharlistName = binary:bin_to_list(Name),
-    inet_res:lookup(CharlistName, Class, convert_to_atom(Type), Opts).
+    TypeAtom = convert_to_atom(Type),
+    inet_res:lookup(CharlistName, Class, TypeAtom, Opts).
 
 charlist_from_dynamic(Data) when is_list(Data) -> {ok, Data};
 charlist_from_dynamic(Data) ->
